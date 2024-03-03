@@ -1,0 +1,9 @@
+---
+- name: "Kubeadm - Deployment"
+  hosts: "ubu"
+  remote_user: root
+  become: yes
+  serial: 1
+
+  roles:
+   - mgmt

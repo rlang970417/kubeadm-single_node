@@ -1,0 +1,68 @@
+---
+# tasks file for mgmt
+
+- name: "Install Base Packages"
+  apt:
+    pkg:
+      - gnupg
+      - ca-certificates
+      - curl
+      - wget
+      - software-properties-common
+      - apt-transport-https
+      - lsb-release
+    state: latest
+    update_cache: true
+
+- name: "Deploying Microsoft Debian Repo GPG"
+  ansible.builtin.copy:
+    src: microsoft.asc
+    dest: /var/tmp
+    owner: root
+    group: bin
+    mode: 0644
+
+- name: "Deploying Microsoft Debian Repo Dpkg"
+  ansible.builtin.copy:
+    src: packages-microsoft-prod.deb
+    dest: /var/tmp
+    owner: root
+    group: bin
+    mode: 0644
+
+- name: "Install Kubectl"
+  ansible.builtin.copy:
+    src: kubectl
+    dest: /usr/local/bin
+    owner: root
+    group: bin
+    mode: 0755
+
+- name: "Update System Keyring"
+  ansible.builtin.shell: cat /var/tmp/microsoft.asc |gpg --dearmor -o /usr/share/keyrings/packages.microsoft.gpg
+
+- name: "Install Microsoft Debian Repo"
+  ansible.builtin.shell: dpkg -i /var/tmp/packages-microsoft-prod.deb
+
+- name: "Install Azure Packages"
+  apt:
+    pkg:
+      - azure-cli
+      - azdata-cli
+    state: latest
+    update_cache: true
+
+- name: "Kubeadm Install Script"
+  ansible.builtin.copy:
+    src: deploy_kubeadm.sh
+    dest: /var/tmp
+    owner: root
+    group: bin
+    mode: 0750
+
+- name: "Deploy Single-Node Kubeadm Install"
+  ansible.builtin.shell: /var/tmp/deploy_kubeadm.sh
+  register: out
+
+# Display output from the Single-Node Kubeadm Install
+- debug: msg={{ out.stdout.split('\n') }}
